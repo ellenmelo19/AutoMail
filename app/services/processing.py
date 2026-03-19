@@ -37,6 +37,9 @@ PRODUCTIVE_KEYWORDS = {
 }
 
 IMPRODUCTIVE_KEYWORDS = {
+    "olá",
+    "ola",
+    "oi",
     "obrigado",
     "obrigada",
     "parabéns",
@@ -47,6 +50,15 @@ IMPRODUCTIVE_KEYWORDS = {
     "boas festas",
     "natal",
     "ano novo",
+    "bom dia",
+    "boa tarde",
+    "boa noite",
+}
+
+GREETING_KEYWORDS = {
+    "olá",
+    "ola",
+    "oi",
     "bom dia",
     "boa tarde",
     "boa noite",
@@ -104,6 +116,15 @@ def classify_email(text: str) -> str:
     return "Improdutivo"
 
 
+def is_short_greeting(text: str, word_count: int) -> bool:
+    if word_count > 4:
+        return False
+    lowered = text.lower()
+    if count_matches(lowered, PRODUCTIVE_KEYWORDS) > 0:
+        return False
+    return any(keyword in lowered for keyword in GREETING_KEYWORDS)
+
+
 def suggest_response(classification: str) -> str:
     if classification == "Produtivo":
         return (
@@ -134,6 +155,11 @@ def analyze_email(source: str, raw_text: str) -> EmailAnalysis:
         classification = gemini_result.classification
         response = gemini_result.response
         engine = f"gemini:{gemini_result.model}"
+
+    if is_short_greeting(cleaned, len(words)):
+        classification = "Improdutivo"
+        response = suggest_response("Improdutivo")
+        engine = f"{engine}+heuristic"
 
     return EmailAnalysis(
         source=source,

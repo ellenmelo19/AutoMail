@@ -25,6 +25,8 @@ Acesse: `http://127.0.0.1:8000`
 - Fallback local por palavras‑chave se o Gemini não estiver disponível.
 - Interface estilo inbox com histórico e edição manual da classificação.
 - Inbox com criação e exclusão de emails, histórico paginado e loading de análise.
+- Estado salvo em `localStorage` para manter inbox e histórico após recarregar.
+- Alternância entre tema claro e escuro.
 
 ## Configurar Gemini (passo a passo)
 

@@ -57,12 +57,19 @@ async def process(
         email_text = extract_text_from_upload(file.filename, data).strip()
 
     if not email_text:
+        if file and file.filename and file.filename.lower().endswith(".pdf"):
+            error_message = (
+                "Não foi possível extrair texto do PDF. "
+                "Se for um PDF escaneado (imagem), cole o texto manualmente."
+            )
+        else:
+            error_message = "Informe um texto ou envie um arquivo válido."
         return templates.TemplateResponse(
             "index.html",
             {
                 "request": request,
                 "result": None,
-                "error": "Informe um texto ou envie um arquivo válido.",
+                "error": error_message,
             },
         )
 
@@ -79,6 +86,35 @@ async def api_analyze(payload: AnalyzeRequest):
         source=payload.source or "texto",
         raw_text=payload.text,
     )
+    return {
+        "classification": result.classification,
+        "response": result.response,
+        "word_count": result.word_count,
+        "engine": result.engine,
+        "source": result.source,
+        "cleaned_text": result.cleaned_text,
+    }
+
+
+@app.post("/api/analyze-file")
+async def api_analyze_file(file: UploadFile = File(...)):
+    if not file.filename:
+        return {"error": "Envie um arquivo válido (.txt ou .pdf)."}
+
+    data = await file.read()
+    if not data:
+        return {"error": "Arquivo vazio. Envie um .txt ou .pdf com conteúdo."}
+
+    extracted = extract_text_from_upload(file.filename, data).strip()
+    if not extracted:
+        return {
+            "error": (
+                "Não foi possível extrair texto do PDF. "
+                "Se for um PDF escaneado (imagem), cole o texto manualmente."
+            )
+        }
+
+    result = analyze_email(source=file.filename, raw_text=extracted)
     return {
         "classification": result.classification,
         "response": result.response,

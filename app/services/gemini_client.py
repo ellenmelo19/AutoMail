@@ -21,6 +21,7 @@ Regras:
 - Responda somente com JSON válido.
 - Formato exato: {"classification": "Produtivo|Improdutivo", "response": "..."}
 - Se estiver em dúvida, classifique como "Produtivo".
+- Se o email for apenas uma saudação (ex: "olá", "bom dia") sem pedido, classifique como "Improdutivo".
 
 Email:
 """

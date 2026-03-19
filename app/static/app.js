@@ -10,14 +10,23 @@ const fromInput = document.getElementById("email-from");
 const subjectInput = document.getElementById("email-subject");
 const bodyInput = document.getElementById("email-body");
 const fileInput = document.getElementById("email-file");
+const fileMeta = document.getElementById("file-meta");
+const fileName = document.getElementById("file-name");
+const fileClear = document.getElementById("file-clear");
 const analyzeBtn = document.getElementById("analyze-btn");
 const analyzeBtnText = document.getElementById("analyze-btn-text");
 const analyzeSpinner = document.getElementById("analyze-spinner");
+const toastContainer = document.getElementById("toast-container");
+const themeToggle = document.getElementById("theme-toggle");
+const themeLabel = document.getElementById("theme-label");
 
 const resultClassification = document.getElementById("result-classification");
 const resultMeta = document.getElementById("result-meta");
 const resultResponse = document.getElementById("result-response");
 const resultPreview = document.getElementById("result-preview");
+
+const STORAGE_KEY = "automail_state_v1";
+const THEME_KEY = "automail_theme";
 
 const sampleEmails = [
   {
@@ -40,15 +49,15 @@ const sampleEmails = [
   },
 ];
 
-let inbox = [...sampleEmails];
+let inbox = [];
 let history = [];
-let currentId = inbox[0]?.id || null;
+let currentId = null;
 let historyPage = 1;
 const historyPageSize = 5;
 
 const classificationStyles = {
-  Produtivo: "bg-emerald-500/15 text-emerald-200 border-emerald-500/30",
-  Improdutivo: "bg-amber-500/15 text-amber-200 border-amber-500/30",
+  Produtivo: "badge-productive",
+  Improdutivo: "badge-improductive",
 };
 
 const escapeHtml = (value) =>
@@ -66,6 +75,57 @@ const getHistoryPageCount = () => Math.max(1, Math.ceil(history.length / history
 
 const getCurrentEmail = () => inbox.find((item) => item.id === currentId);
 
+const persistState = () => {
+  const payload = {
+    inbox,
+    history,
+    currentId,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+};
+
+const loadState = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      inbox = [...sampleEmails];
+      currentId = inbox[0]?.id || null;
+      return;
+    }
+    const data = JSON.parse(raw);
+    inbox = Array.isArray(data.inbox) ? data.inbox : [...sampleEmails];
+    history = Array.isArray(data.history) ? data.history : [];
+    currentId = data.currentId || inbox[0]?.id || null;
+  } catch (error) {
+    inbox = [...sampleEmails];
+    currentId = inbox[0]?.id || null;
+  }
+};
+
+const setTheme = (theme) => {
+  document.documentElement.dataset.theme = theme;
+  if (themeLabel) {
+    themeLabel.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+  document.documentElement.style.colorScheme = theme;
+  localStorage.setItem(THEME_KEY, theme);
+};
+
+const initTheme = () => {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored) {
+    setTheme(stored);
+    return;
+  }
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+};
+
+const toggleTheme = () => {
+  const current = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  setTheme(current === "dark" ? "light" : "dark");
+};
+
 const setLoading = (loading) => {
   analyzeBtn.disabled = loading;
   analyzeSpinner.classList.toggle("hidden", !loading);
@@ -79,6 +139,29 @@ const setResultLoading = () => {
   resultPreview.textContent = "Prévia será exibida ao concluir a análise.";
 };
 
+const showToast = (message, type = "error") => {
+  if (!message) return;
+
+  const toast = document.createElement("div");
+  const baseClass = "toast rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur";
+  const typeClass = type === "success" ? "toast-success" : "toast-error";
+
+  toast.className = `${baseClass} ${typeClass}`;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add("show"));
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    toast.classList.add("hide");
+  }, 3600);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+};
+
 const renderInbox = () => {
   inboxList.innerHTML = "";
 
@@ -89,33 +172,33 @@ const renderInbox = () => {
 
     const card = document.createElement("div");
     card.className =
-      "relative w-full cursor-pointer rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-left transition hover:border-cyan-400/40";
+      "relative w-full cursor-pointer rounded-2xl border border-app bg-surface p-4 text-left transition hover:border-accent hover:bg-accent-soft";
     card.setAttribute("role", "button");
     card.tabIndex = 0;
 
     if (email.id === currentId) {
-      card.classList.add("border-cyan-400/40", "bg-cyan-400/10");
+      card.classList.add("border-accent", "bg-accent-soft");
     }
 
     const badge = email.classification
       ? `<span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-          classificationStyles[email.classification] || "bg-slate-800 text-slate-200 border-slate-700"
+          classificationStyles[email.classification] || "bg-surface-strong text-muted border-app"
         }">${email.classification}</span>`
       : "";
 
     card.innerHTML = `
       <div class="flex items-start justify-between gap-2 pr-6">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 truncate">${safeFrom}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted truncate">${safeFrom}</p>
         ${badge}
       </div>
-      <p class="mt-2 text-sm font-semibold text-slate-100 clamp-2 break-words">${safeSubject}</p>
-      <p class="mt-1 text-xs text-slate-400 clamp-2 break-words">${safeBody}</p>
+      <p class="mt-2 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
+      <p class="mt-1 text-xs text-muted clamp-2 break-words">${safeBody}</p>
     `;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className =
-      "absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-700 text-xs text-slate-300 transition hover:border-rose-400/50 hover:text-rose-200";
+      "absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-app text-xs text-muted transition hover:border-rose-300 hover:text-rose-500";
     deleteBtn.textContent = "×";
     deleteBtn.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -146,7 +229,7 @@ const renderHistory = () => {
 
   if (history.length === 0) {
     const empty = document.createElement("p");
-    empty.className = "text-sm text-slate-400";
+    empty.className = "text-sm text-muted";
     empty.textContent = "Nenhuma análise registrada ainda.";
     historyList.appendChild(empty);
   } else {
@@ -156,23 +239,23 @@ const renderHistory = () => {
     pageItems.forEach((item) => {
       const safeSubject = escapeHtml(item.subject || "Sem assunto");
       const wrapper = document.createElement("div");
-      wrapper.className = "rounded-2xl border border-slate-800 bg-slate-950/60 p-4";
+      wrapper.className = "rounded-2xl border border-app bg-surface-strong p-4";
 
       const badgeClass =
-        classificationStyles[item.classification] || "bg-slate-800 text-slate-200 border-slate-700";
+        classificationStyles[item.classification] || "bg-surface-strong text-muted border-app";
 
       wrapper.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">${item.time}</p>
-            <p class="mt-1 text-sm font-semibold text-slate-100 clamp-2 break-words">${safeSubject}</p>
-            <p class="mt-1 text-xs text-slate-400">Motor: ${item.engine}</p>
+            <p class="text-xs uppercase tracking-[0.2em] text-muted">${item.time}</p>
+            <p class="mt-1 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
+            <p class="mt-1 text-xs text-muted">Motor: ${item.engine}</p>
           </div>
           <span class="rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}">${item.classification}</span>
         </div>
-        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
           <span>Editar classificação:</span>
-          <select class="history-select rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200" data-id="${item.id}">
+          <select class="history-select rounded-lg border border-app bg-surface-strong px-2 py-1 text-muted" data-id="${item.id}">
             <option value="Produtivo" ${item.classification === "Produtivo" ? "selected" : ""}>Produtivo</option>
             <option value="Improdutivo" ${item.classification === "Improdutivo" ? "selected" : ""}>Improdutivo</option>
           </select>
@@ -210,6 +293,7 @@ const renderHistory = () => {
       if (inboxItem) {
         inboxItem.classification = newValue;
       }
+      persistState();
       renderInbox();
       renderHistory();
     });
@@ -225,7 +309,9 @@ const selectEmail = (id) => {
   subjectInput.value = email.subject;
   bodyInput.value = email.body;
   selectedTitle.textContent = email.subject || "Novo email";
+  resetFileInput();
 
+  persistState();
   renderInbox();
 };
 
@@ -238,6 +324,7 @@ const updateCurrentEmail = () => {
   email.body = bodyInput.value.trim();
 
   selectedTitle.textContent = email.subject || "Novo email";
+  persistState();
   renderInbox();
 };
 
@@ -250,6 +337,7 @@ const addNewEmail = () => {
   };
   inbox = [newEmail, ...inbox];
   currentId = newEmail.id;
+  persistState();
   selectEmail(newEmail.id);
 };
 
@@ -266,8 +354,10 @@ const deleteEmail = (id) => {
 
   if (currentId === id) {
     currentId = inbox[0].id;
+    persistState();
     selectEmail(currentId);
   } else {
+    persistState();
     renderInbox();
   }
 };
@@ -279,42 +369,86 @@ const updateResults = (data) => {
   resultPreview.textContent = data.cleaned_text.slice(0, 420) + (data.cleaned_text.length > 420 ? "..." : "");
 };
 
-form.addEventListener("submit", async (event) => {
-  setLoading(true);
+const analyzeText = async (email) => {
+  const response = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text: email.body,
+      source: email.subject || "texto",
+    }),
+  });
 
-  if (fileInput.files && fileInput.files.length > 0) {
-    updateCurrentEmail();
-    return;
+  if (!response.ok) {
+    throw new Error("Falha ao analisar o email.");
   }
 
+  return response.json();
+};
+
+const analyzeFile = async (file, email) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/analyze-file", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Falha ao analisar o arquivo.");
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error);
+  }
+
+  email.subject = email.subject || file.name;
+  email.body = data.cleaned_text;
+  bodyInput.value = data.cleaned_text;
+  return data;
+};
+
+const resetFileInput = () => {
+  fileInput.value = "";
+  fileMeta.classList.add("hidden");
+};
+
+const updateFileMeta = () => {
+  if (fileInput.files && fileInput.files.length > 0) {
+    fileName.textContent = fileInput.files[0].name;
+    fileMeta.classList.remove("hidden");
+  } else {
+    fileMeta.classList.add("hidden");
+  }
+};
+
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  setLoading(true);
   updateCurrentEmail();
 
   const email = getCurrentEmail();
-  if (!email || !email.body) {
+  if (!email) {
     setLoading(false);
-    window.alert("Digite o conteúdo do email antes de analisar.");
+    return;
+  }
+
+  const hasFile = fileInput.files && fileInput.files.length > 0;
+  if (!hasFile && !email.body) {
+    setLoading(false);
+    showToast("Digite o conteúdo do email antes de analisar.");
     return;
   }
 
   setResultLoading();
 
   try {
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: email.body,
-        source: email.subject || "texto",
-      }),
-    });
+    const data = hasFile
+      ? await analyzeFile(fileInput.files[0], email)
+      : await analyzeText(email);
 
-    if (!response.ok) {
-      window.alert("Falha ao analisar o email. Tente novamente.");
-      return;
-    }
-
-    const data = await response.json();
     updateResults(data);
 
     const historyItem = {
@@ -327,13 +461,15 @@ form.addEventListener("submit", async (event) => {
     };
 
     email.classification = data.classification;
-    history = [historyItem, ...history];
+    history = [historyItem, ...history].slice(0, 30);
     historyPage = 1;
 
+    persistState();
     renderInbox();
     renderHistory();
+    showToast("Análise concluída.", "success");
   } catch (error) {
-    window.alert("Erro inesperado ao chamar a API.");
+    showToast(error.message || "Erro inesperado ao chamar a API.");
   } finally {
     setLoading(false);
   }
@@ -343,6 +479,11 @@ fromInput.addEventListener("input", updateCurrentEmail);
 subjectInput.addEventListener("input", updateCurrentEmail);
 bodyInput.addEventListener("input", updateCurrentEmail);
 newEmailBtn.addEventListener("click", addNewEmail);
+
+fileInput.addEventListener("change", updateFileMeta);
+fileClear.addEventListener("click", () => {
+  resetFileInput();
+});
 
 historyPrev.addEventListener("click", () => {
   if (historyPage > 1) {
@@ -358,6 +499,19 @@ historyNext.addEventListener("click", () => {
   }
 });
 
+if (themeToggle) {
+  themeToggle.addEventListener("click", toggleTheme);
+}
+
+loadState();
+initTheme();
 renderInbox();
 renderHistory();
-selectEmail(currentId);
+if (currentId) {
+  selectEmail(currentId);
+}
+
+const serverError = document.body.dataset.error;
+if (serverError) {
+  showToast(serverError);
+}
