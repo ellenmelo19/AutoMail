@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 
 from app.services.processing import analyze_email, extract_text_from_upload
 
@@ -12,6 +13,11 @@ app = FastAPI(title="AutoMail")
 
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+class AnalyzeRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    source: str | None = None
 
 
 @app.get("/health")
@@ -65,3 +71,19 @@ async def process(
         "index.html",
         {"request": request, "result": result, "error": None},
     )
+
+
+@app.post("/api/analyze")
+async def api_analyze(payload: AnalyzeRequest):
+    result = analyze_email(
+        source=payload.source or "texto",
+        raw_text=payload.text,
+    )
+    return {
+        "classification": result.classification,
+        "response": result.response,
+        "word_count": result.word_count,
+        "engine": result.engine,
+        "source": result.source,
+        "cleaned_text": result.cleaned_text,
+    }

@@ -23,6 +23,8 @@ Acesse: `http://127.0.0.1:8000`
 - Extração do conteúdo do email.
 - Classificação com Gemini (quando configurado).
 - Fallback local por palavras‑chave se o Gemini não estiver disponível.
+- Interface estilo inbox com histórico e edição manual da classificação.
+- Inbox com criação e exclusão de emails, histórico paginado e loading de análise.
 
 ## Configurar Gemini (passo a passo)
 
