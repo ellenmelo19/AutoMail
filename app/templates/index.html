@@ -226,8 +226,8 @@
         </div>
       </header>
 
-      <section class="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px] 2xl:grid-cols-[300px_minmax(0,1fr)_360px]">
-        <aside class="rounded-3xl border border-app bg-surface p-5 shadow-sm">
+      <section class="grid items-stretch gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px] 2xl:grid-cols-[300px_minmax(0,1fr)_360px]">
+        <aside class="flex h-full flex-col rounded-3xl border border-app bg-surface p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-semibold">Caixa de entrada</p>
@@ -241,10 +241,27 @@
               + Novo
             </button>
           </div>
-          <div id="inbox-list" class="mt-5 space-y-3"></div>
+          <div id="inbox-list" class="mt-5 flex-1 grid min-h-0 grid-rows-6 gap-3 overflow-hidden"></div>
+          <div class="mt-auto flex items-center justify-between pt-4 text-xs">
+            <button
+              id="inbox-prev"
+              type="button"
+              class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
+            >
+              Anterior
+            </button>
+            <span id="inbox-page" class="text-muted">1/1</span>
+            <button
+              id="inbox-next"
+              type="button"
+              class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
+            >
+              Próximo
+            </button>
+          </div>
         </aside>
 
-        <div class="flex flex-col gap-6">
+        <div class="flex h-full flex-col gap-6">
           <section class="rounded-3xl border border-app bg-surface p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -330,7 +347,7 @@
           </section>
 
           <section class="grid gap-4 xl:grid-cols-2">
-            <div class="rounded-2xl border border-app bg-surface p-6 shadow-sm">
+            <div class="flex flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[140px] xl:min-h-[160px]">
               <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Classificação</p>
               {% if result %}
                 <p id="result-classification" class="mt-3 text-2xl font-semibold">{{ result.classification }}</p>
@@ -342,7 +359,7 @@
                 <p id="result-meta" class="mt-2 text-sm text-muted">Resultado aparecerá aqui após o envio.</p>
               {% endif %}
             </div>
-            <div class="rounded-2xl border border-app bg-surface p-6 shadow-sm">
+            <div class="flex flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[140px] xl:min-h-[160px]">
               <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Resposta sugerida</p>
               {% if result %}
                 <p id="result-response" class="mt-3 text-sm text-muted">{{ result.response }}</p>
@@ -355,14 +372,14 @@
           </section>
 
           {% if result %}
-            <section class="rounded-2xl border border-app bg-surface p-6 shadow-sm">
+            <section class="flex h-full flex-1 flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[170px] xl:min-h-[190px]">
               <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Prévia do email</p>
               <p id="result-preview" class="mt-3 text-sm text-muted">
                 {{ result.cleaned_text[:420] }}{% if result.cleaned_text|length > 420 %}...{% endif %}
               </p>
             </section>
           {% else %}
-            <section class="rounded-2xl border border-app bg-surface p-6 shadow-sm">
+            <section class="flex h-full flex-1 flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[170px] xl:min-h-[190px]">
               <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Prévia do email</p>
               <p id="result-preview" class="mt-3 text-sm text-muted">
                 A prévia aparecerá aqui após a análise.
@@ -371,32 +388,28 @@
           {% endif %}
         </div>
 
-        <aside class="rounded-3xl border border-app bg-surface p-5 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p class="text-sm font-semibold">Histórico</p>
-              <p class="text-xs text-muted">Últimas análises</p>
-            </div>
-            <div class="flex items-center gap-2 text-xs">
-              <button
-                id="history-prev"
-                type="button"
-                class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
-              >
-                Anterior
-              </button>
-              <span id="history-page" class="text-muted">1/1</span>
-              <button
-                id="history-next"
-                type="button"
-                class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
-              >
-                Próximo
-              </button>
-            </div>
+        <aside class="flex h-full flex-col rounded-3xl border border-app bg-surface p-5 shadow-sm">
+          <div>
+            <p class="text-sm font-semibold">Histórico</p>
+            <p class="text-xs text-muted">Últimas análises</p>
           </div>
-          <div id="history-list" class="mt-4 space-y-3">
-            <p class="text-sm text-muted">Nenhuma análise registrada ainda.</p>
+          <div id="history-list" class="mt-4 flex-1 grid min-h-0 grid-rows-6 gap-3 overflow-hidden"></div>
+          <div class="mt-auto flex items-center justify-between pt-4 text-xs">
+            <button
+              id="history-prev"
+              type="button"
+              class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
+            >
+              Anterior
+            </button>
+            <span id="history-page" class="text-muted">1/1</span>
+            <button
+              id="history-next"
+              type="button"
+              class="rounded-full border border-app px-2 py-1 text-muted transition hover:border-accent hover:text-accent"
+            >
+              Próximo
+            </button>
           </div>
         </aside>
       </section>

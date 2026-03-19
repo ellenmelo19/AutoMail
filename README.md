@@ -27,6 +27,8 @@ Acesse: `http://127.0.0.1:8000`
 - Inbox com criação e exclusão de emails, histórico paginado e loading de análise.
 - Estado salvo em `localStorage` para manter inbox e histórico após recarregar.
 - Alternância entre tema claro e escuro.
+- Paginação responsiva na inbox e no histórico com timestamps completos.
+- Paginação na inbox e datas completas nos cards.
 
 ## Configurar Gemini (passo a passo)
 

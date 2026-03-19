@@ -3,6 +3,9 @@ const historyList = document.getElementById("history-list");
 const historyPrev = document.getElementById("history-prev");
 const historyNext = document.getElementById("history-next");
 const historyPageLabel = document.getElementById("history-page");
+const inboxPrev = document.getElementById("inbox-prev");
+const inboxNext = document.getElementById("inbox-next");
+const inboxPageLabel = document.getElementById("inbox-page");
 const newEmailBtn = document.getElementById("new-email-btn");
 const selectedTitle = document.getElementById("selected-title");
 const form = document.getElementById("email-form");
@@ -39,18 +42,21 @@ const sampleEmails = [
     from: "cliente@empresa.com",
     subject: "Erro ao acessar o portal",
     body: "Olá, estou tentando acessar o portal do cliente, mas aparece um erro de autenticação. Poderiam verificar?",
+    createdAt: Date.now() - 1000 * 60 * 60 * 2,
   },
   {
     id: "e2",
     from: "financeiro@parceiro.com",
     subject: "Status de fatura em aberto",
     body: "Bom dia! Poderiam atualizar o status da fatura 2025-119? Está em aberto há alguns dias.",
+    createdAt: Date.now() - 1000 * 60 * 60 * 6,
   },
   {
     id: "e3",
     from: "relacionamento@cliente.com",
     subject: "Obrigado pelo atendimento",
     body: "Muito obrigado pelo suporte rápido na última semana. Vocês foram incríveis!",
+    createdAt: Date.now() - 1000 * 60 * 60 * 12,
   },
 ];
 
@@ -58,7 +64,9 @@ let inbox = [];
 let history = [];
 let currentId = null;
 let historyPage = 1;
-const historyPageSize = 5;
+let inboxPage = 1;
+const historyPageSize = 6;
+const inboxPageSize = 6;
 
 const classificationStyles = {
   Produtivo: "badge-productive",
@@ -80,14 +88,25 @@ const formatDateTime = (date) =>
   }).format(date);
 
 const getHistoryPageCount = () => Math.max(1, Math.ceil(history.length / historyPageSize));
+const getInboxPageCount = () => Math.max(1, Math.ceil(inbox.length / inboxPageSize));
 
 const getCurrentEmail = () => inbox.find((item) => item.id === currentId);
+
+const normalizeInbox = () => {
+  const now = Date.now();
+  inbox = inbox.map((item, index) => ({
+    ...item,
+    createdAt: item.createdAt || now - index * 1000 * 60,
+  }));
+};
 
 const persistState = () => {
   const payload = {
     inbox,
     history,
     currentId,
+    inboxPage,
+    historyPage,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 };
@@ -103,7 +122,9 @@ const loadState = () => {
     const data = JSON.parse(raw);
     inbox = Array.isArray(data.inbox) ? data.inbox : [...sampleEmails];
     history = Array.isArray(data.history) ? data.history : [];
-    currentId = data.currentId || inbox[0]?.id || null;
+    currentId = inbox[0]?.id || null;
+    inboxPage = 1;
+    historyPage = data.historyPage || 1;
   } catch (error) {
     inbox = [...sampleEmails];
     currentId = inbox[0]?.id || null;
@@ -113,7 +134,7 @@ const loadState = () => {
 const setTheme = (theme) => {
   document.documentElement.dataset.theme = theme;
   if (themeLabel) {
-    themeLabel.textContent = theme === "dark" ? "Escuro" : "Claro";
+    themeLabel.textContent = theme === "dark" ? "☀️" : "🌙";
   }
   document.documentElement.style.colorScheme = theme;
   localStorage.setItem(THEME_KEY, theme);
@@ -218,62 +239,97 @@ const closeConfirm = () => {
 const renderInbox = () => {
   inboxList.innerHTML = "";
 
-  inbox.forEach((email) => {
-    const safeFrom = escapeHtml(email.from || "");
-    const safeSubject = escapeHtml(email.subject || "Sem assunto");
-    const safeBody = escapeHtml(email.body || "");
+  const totalPages = getInboxPageCount();
+  if (inboxPage > totalPages) {
+    inboxPage = totalPages;
+  }
 
-    const card = document.createElement("div");
-    card.className =
-      "relative w-full cursor-pointer rounded-2xl border border-app bg-surface p-4 text-left transition hover:border-accent hover:bg-accent-soft";
-    card.setAttribute("role", "button");
-    card.tabIndex = 0;
+  if (inbox.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "text-sm text-muted";
+    empty.textContent = "Nenhum email disponível.";
+    inboxList.appendChild(empty);
+  } else {
+    const sortedInbox = [...inbox].sort((a, b) => b.createdAt - a.createdAt);
+    const start = (inboxPage - 1) * inboxPageSize;
+    const pageItems = sortedInbox.slice(start, start + inboxPageSize);
 
-    if (email.id === currentId) {
-      card.classList.add("border-accent", "bg-accent-soft");
-    }
+    pageItems.forEach((email) => {
+      const safeFrom = escapeHtml(email.from || "");
+      const safeSubject = escapeHtml(email.subject || "Sem assunto");
+      const safeBody = escapeHtml(email.body || "");
+      const createdAt = email.createdAt ? formatDateTime(new Date(email.createdAt)) : "";
 
-    const badge = email.classification
-      ? `<button type="button" class="rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-          classificationStyles[email.classification] || "bg-surface-strong text-muted border-app"
-        }">${email.classification}</button>`
-      : "";
+      const card = document.createElement("div");
+      card.className =
+        "relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-app bg-surface p-4 text-left transition hover:border-accent hover:bg-accent-soft";
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
 
-    card.innerHTML = `
+      if (email.id === currentId) {
+        card.classList.add("border-accent", "bg-accent-soft");
+      }
+
+      const badge = email.classification
+        ? `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${
+            classificationStyles[email.classification] || "bg-surface-strong text-muted border-app"
+          }">${email.classification}</span>`
+        : `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold opacity-0">Sem</span>`;
+
+      card.innerHTML = `
       <div class="flex items-start justify-between gap-2 pr-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted truncate">${safeFrom}</p>
-        ${badge}
       </div>
       <p class="mt-2 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
       <p class="mt-1 text-xs text-muted clamp-2 break-words">${safeBody}</p>
+      <div class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+        <span>${createdAt}</span>
+        ${badge}
+      </div>
     `;
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className =
-      "absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-app text-xs text-muted transition hover:border-rose-300 hover:text-rose-500";
-    deleteBtn.textContent = "×";
-    deleteBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      openConfirm({
-        title: "Excluir email",
-        message: "Deseja remover este email da caixa de entrada?",
-        onConfirm: () => deleteEmail(email.id),
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className =
+        "absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-app text-xs text-muted transition hover:border-rose-300 hover:text-rose-500";
+      deleteBtn.textContent = "×";
+      deleteBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openConfirm({
+          title: "Excluir email",
+          message: "Deseja remover este email da caixa de entrada?",
+          onConfirm: () => deleteEmail(email.id),
+        });
       });
+
+      card.appendChild(deleteBtn);
+
+      card.addEventListener("click", () => selectEmail(email.id));
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectEmail(email.id);
+        }
+      });
+
+      inboxList.appendChild(card);
     });
 
-    card.appendChild(deleteBtn);
+    const placeholders = inboxPageSize - pageItems.length;
+    for (let i = 0; i < placeholders; i += 1) {
+      const empty = document.createElement("div");
+      empty.className =
+        "flex h-full flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-4 text-center text-xs text-muted opacity-70";
+      empty.textContent = "Espaco reservado";
+      inboxList.appendChild(empty);
+    }
+  }
 
-    card.addEventListener("click", () => selectEmail(email.id));
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        selectEmail(email.id);
-      }
-    });
-
-    inboxList.appendChild(card);
-  });
+  inboxPageLabel.textContent = `${inboxPage}/${getInboxPageCount()}`;
+  inboxPrev.disabled = inboxPage <= 1;
+  inboxNext.disabled = inboxPage >= getInboxPageCount();
+  inboxPrev.classList.toggle("opacity-40", inboxPrev.disabled);
+  inboxNext.classList.toggle("opacity-40", inboxNext.disabled);
 };
 
 const renderHistory = () => {
@@ -296,7 +352,8 @@ const renderHistory = () => {
     pageItems.forEach((item) => {
       const safeSubject = escapeHtml(item.subject || "Sem assunto");
       const wrapper = document.createElement("div");
-      wrapper.className = "rounded-2xl border border-app bg-surface-strong p-4";
+      wrapper.className =
+        "flex h-full flex-col overflow-hidden rounded-2xl border border-app bg-surface-strong p-4";
 
       const badgeClass =
         classificationStyles[item.classification] || "bg-surface-strong text-muted border-app";
@@ -310,16 +367,27 @@ const renderHistory = () => {
           </div>
           <button
             type="button"
-            class="history-badge rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}"
+            class="history-toggle inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${badgeClass}"
             data-id="${item.id}"
+            data-next="${item.classification === "Produtivo" ? "Improdutivo" : "Produtivo"}"
           >
             ${item.classification}
           </button>
         </div>
+        <p class="mt-auto pt-3 text-xs text-muted">Clique na tag para alternar.</p>
       `;
 
       historyList.appendChild(wrapper);
     });
+
+    const placeholders = historyPageSize - pageItems.length;
+    for (let i = 0; i < placeholders; i += 1) {
+      const empty = document.createElement("div");
+      empty.className =
+        "flex h-full flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-4 text-center text-xs text-muted opacity-70";
+      empty.textContent = "Sem historico";
+      historyList.appendChild(empty);
+    }
   }
 
   historyPageLabel.textContent = `${historyPage}/${getHistoryPageCount()}`;
@@ -328,17 +396,17 @@ const renderHistory = () => {
   historyPrev.classList.toggle("opacity-40", historyPrev.disabled);
   historyNext.classList.toggle("opacity-40", historyNext.disabled);
 
-  historyList.querySelectorAll(".history-badge").forEach((badge) => {
-    badge.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const itemId = badge.dataset.id;
+  historyList.querySelectorAll(".history-toggle").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const target = event.currentTarget;
+      const itemId = target.dataset.id;
+      const nextValue = target.dataset.next;
       const item = history.find((entry) => entry.id === itemId);
       if (!item) return;
 
-      const nextValue = item.classification === "Produtivo" ? "Improdutivo" : "Produtivo";
       openConfirm({
         title: "Alterar classificação",
-        message: `Confirmar alteração para "${nextValue}"?`,
+        message: `Tem certeza que deseja alterar para ${nextValue}?`,
         onConfirm: () => {
           item.classification = nextValue;
           const inboxItem = inbox.find((entry) => entry.id === item.emailId);
@@ -365,6 +433,12 @@ const selectEmail = (id) => {
   selectedTitle.textContent = email.subject || "Novo email";
   resetFileInput();
 
+  const sortedInbox = [...inbox].sort((a, b) => b.createdAt - a.createdAt);
+  const selectedIndex = sortedInbox.findIndex((entry) => entry.id === id);
+  if (selectedIndex >= 0) {
+    inboxPage = Math.floor(selectedIndex / inboxPageSize) + 1;
+  }
+
   persistState();
   renderInbox();
 };
@@ -388,9 +462,11 @@ const addNewEmail = () => {
     from: "",
     subject: "",
     body: "",
+    createdAt: Date.now(),
   };
   inbox = [newEmail, ...inbox];
   currentId = newEmail.id;
+  inboxPage = 1;
   persistState();
   selectEmail(newEmail.id);
 };
@@ -539,6 +615,7 @@ fileClear.addEventListener("click", () => {
 historyPrev.addEventListener("click", () => {
   if (historyPage > 1) {
     historyPage -= 1;
+    persistState();
     renderHistory();
   }
 });
@@ -546,7 +623,24 @@ historyPrev.addEventListener("click", () => {
 historyNext.addEventListener("click", () => {
   if (historyPage < getHistoryPageCount()) {
     historyPage += 1;
+    persistState();
     renderHistory();
+  }
+});
+
+inboxPrev.addEventListener("click", () => {
+  if (inboxPage > 1) {
+    inboxPage -= 1;
+    persistState();
+    renderInbox();
+  }
+});
+
+inboxNext.addEventListener("click", () => {
+  if (inboxPage < getInboxPageCount()) {
+    inboxPage += 1;
+    persistState();
+    renderInbox();
   }
 });
 
@@ -555,6 +649,7 @@ if (themeToggle) {
 }
 
 loadState();
+normalizeInbox();
 initTheme();
 renderInbox();
 renderHistory();
