@@ -257,12 +257,12 @@ const renderInbox = () => {
     pageItems.forEach((email) => {
       const safeFrom = escapeHtml(email.from || "");
       const safeSubject = escapeHtml(email.subject || "Sem assunto");
-      const safeBody = escapeHtml(email.body || "");
+      const safeBody = escapeHtml(email.body || "Sem mensagem");
       const createdAt = email.createdAt ? formatDateTime(new Date(email.createdAt)) : "";
 
       const card = document.createElement("div");
       card.className =
-        "relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-app bg-surface p-4 text-left transition hover:border-accent hover:bg-accent-soft";
+        "relative flex h-[136px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-app bg-surface p-3 text-left transition hover:border-accent hover:bg-accent-soft";
       card.setAttribute("role", "button");
       card.tabIndex = 0;
 
@@ -274,15 +274,15 @@ const renderInbox = () => {
         ? `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${
             classificationStyles[email.classification] || "bg-surface-strong text-muted border-app"
           }">${email.classification}</span>`
-        : `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold opacity-0">Sem</span>`;
+        : `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap badge-pending">Nao analisado</span>`;
 
       card.innerHTML = `
       <div class="flex items-start justify-between gap-2 pr-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted truncate">${safeFrom}</p>
       </div>
-      <p class="mt-2 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
-      <p class="mt-1 text-xs text-muted clamp-2 break-words">${safeBody}</p>
-      <div class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+      <p class="mt-1 min-w-0 text-sm font-semibold truncate">${safeSubject}</p>
+      <p class="mt-1 min-w-0 text-xs text-muted truncate">${safeBody}</p>
+      <div class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] uppercase tracking-[0.2em] text-muted">
         <span>${createdAt}</span>
         ${badge}
       </div>
@@ -319,7 +319,7 @@ const renderInbox = () => {
     for (let i = 0; i < placeholders; i += 1) {
       const empty = document.createElement("div");
       empty.className =
-        "flex h-full flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-4 text-center text-xs text-muted opacity-70";
+        "flex h-[132px] flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-3 text-center text-xs text-muted opacity-70";
       empty.textContent = "Espaco reservado";
       inboxList.appendChild(empty);
     }
@@ -353,28 +353,28 @@ const renderHistory = () => {
       const safeSubject = escapeHtml(item.subject || "Sem assunto");
       const wrapper = document.createElement("div");
       wrapper.className =
-        "flex h-full flex-col overflow-hidden rounded-2xl border border-app bg-surface-strong p-4";
+        "flex h-[132px] flex-col overflow-hidden rounded-2xl border border-app bg-surface-strong p-3";
 
       const badgeClass =
         classificationStyles[item.classification] || "bg-surface-strong text-muted border-app";
 
       wrapper.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-muted">${item.time}</p>
-            <p class="mt-1 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
-            <p class="mt-1 text-xs text-muted">Motor: ${item.engine}</p>
+          <div class="min-w-0">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-muted">${item.time}</p>
+            <p class="mt-1 min-w-0 text-sm font-semibold truncate">${safeSubject}</p>
+            <p class="mt-1 min-w-0 text-xs text-muted truncate">Motor: ${item.engine}</p>
           </div>
           <button
             type="button"
-            class="history-toggle inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${badgeClass}"
+            class="history-toggle inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold whitespace-nowrap ${badgeClass}"
             data-id="${item.id}"
             data-next="${item.classification === "Produtivo" ? "Improdutivo" : "Produtivo"}"
           >
             ${item.classification}
           </button>
         </div>
-        <p class="mt-auto pt-3 text-xs text-muted">Clique na tag para alternar.</p>
+        
       `;
 
       historyList.appendChild(wrapper);
@@ -384,7 +384,7 @@ const renderHistory = () => {
     for (let i = 0; i < placeholders; i += 1) {
       const empty = document.createElement("div");
       empty.className =
-        "flex h-full flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-4 text-center text-xs text-muted opacity-70";
+        "flex h-[132px] flex-col items-center justify-center rounded-2xl border border-app bg-surface-strong p-3 text-center text-xs text-muted opacity-70";
       empty.textContent = "Sem historico";
       historyList.appendChild(empty);
     }
@@ -661,3 +661,4 @@ const serverError = document.body.dataset.error;
 if (serverError) {
   showToast(serverError);
 }
+
