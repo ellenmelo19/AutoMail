@@ -7,6 +7,8 @@ from typing import Iterable
 
 from pypdf import PdfReader
 
+from app.services.gemini_client import classify_with_gemini
+
 
 PRODUCTIVE_KEYWORDS = {
     "suporte",
@@ -59,6 +61,7 @@ class EmailAnalysis:
     word_count: int
     classification: str
     response: str
+    engine: str
 
 
 def extract_text_from_upload(filename: str, data: bytes) -> str:
@@ -116,9 +119,21 @@ def suggest_response(classification: str) -> str:
 
 def analyze_email(source: str, raw_text: str) -> EmailAnalysis:
     cleaned = normalize_text(raw_text)
+    trimmed = cleaned[:6000]
     words = cleaned.split() if cleaned else []
     classification = classify_email(cleaned)
     response = suggest_response(classification)
+    engine = "fallback-local"
+
+    try:
+        gemini_result = classify_with_gemini(trimmed)
+    except Exception:
+        gemini_result = None
+
+    if gemini_result:
+        classification = gemini_result.classification
+        response = gemini_result.response
+        engine = f"gemini:{gemini_result.model}"
 
     return EmailAnalysis(
         source=source,
@@ -127,4 +142,5 @@ def analyze_email(source: str, raw_text: str) -> EmailAnalysis:
         word_count=len(words),
         classification=classification,
         response=response,
+        engine=engine,
     )

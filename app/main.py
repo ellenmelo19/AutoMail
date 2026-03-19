@@ -2,8 +2,11 @@
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
 
 from app.services.processing import analyze_email, extract_text_from_upload
+
+load_dotenv()
 
 app = FastAPI(title="AutoMail")
 
