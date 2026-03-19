@@ -274,7 +274,7 @@
           </div>
         </aside>
 
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4">
           <section class="rounded-3xl border border-app bg-surface p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -392,7 +392,7 @@
               </p>
             </section>
           {% else %}
-            <section class="flex h-full flex-1 flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[170px] xl:min-h-[190px]">
+            <section class="flex h-full flex-1 flex-col rounded-2xl border border-app bg-surface p-6 shadow-sm min-h-[170px] xl:min-h-[140px]">
               <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Prévia do email</p>
               <p id="result-preview" class="mt-3 text-sm text-muted">
                 A prévia aparecerá aqui após a análise.
@@ -401,13 +401,13 @@
           {% endif %}
         </div>
 
-        <aside class="flex flex-col rounded-3xl border border-app bg-surface p-5 shadow-sm">
+        <aside class="flex flex-col rounded-3xl border border-app bg-surface p-5 pt-7 shadow-sm">
           <div>
             <p class="text-sm font-semibold">Histórico</p>
             <p class="text-xs text-muted">Últimas análises</p>
           </div>
           <div id="history-list" class="mt-4 flex-1 grid min-h-0 grid-rows-[repeat(6,minmax(0,1fr))] gap-3 overflow-hidden"></div>
-          <div class="mt-auto flex items-center justify-between pt-4 text-xs">
+          <div class="mt-auto flex items-center justify-between pt-7 text-xs">
             <button
               id="history-prev"
               type="button"
