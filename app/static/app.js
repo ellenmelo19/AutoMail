@@ -113,7 +113,7 @@ const loadState = () => {
 const setTheme = (theme) => {
   document.documentElement.dataset.theme = theme;
   if (themeLabel) {
-    themeLabel.textContent = theme === "dark" ? "☀️" : "🌙";
+    themeLabel.textContent = theme === "dark" ? "Escuro" : "Claro";
   }
   document.documentElement.style.colorScheme = theme;
   localStorage.setItem(THEME_KEY, theme);
@@ -234,9 +234,9 @@ const renderInbox = () => {
     }
 
     const badge = email.classification
-      ? `<span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+      ? `<button type="button" class="rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
           classificationStyles[email.classification] || "bg-surface-strong text-muted border-app"
-        }">${email.classification}</span>`
+        }">${email.classification}</button>`
       : "";
 
     card.innerHTML = `
@@ -308,14 +308,13 @@ const renderHistory = () => {
             <p class="mt-1 text-sm font-semibold clamp-2 break-words">${safeSubject}</p>
             <p class="mt-1 text-xs text-muted">Motor: ${item.engine}</p>
           </div>
-          <span class="rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}">${item.classification}</span>
-        </div>
-        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
-          <span>Editar classificação:</span>
-          <select class="history-select rounded-lg border border-app bg-surface-strong px-2 py-1 text-muted" data-id="${item.id}">
-            <option value="Produtivo" ${item.classification === "Produtivo" ? "selected" : ""}>Produtivo</option>
-            <option value="Improdutivo" ${item.classification === "Improdutivo" ? "selected" : ""}>Improdutivo</option>
-          </select>
+          <button
+            type="button"
+            class="history-badge rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}"
+            data-id="${item.id}"
+          >
+            ${item.classification}
+          </button>
         </div>
       `;
 
@@ -329,22 +328,22 @@ const renderHistory = () => {
   historyPrev.classList.toggle("opacity-40", historyPrev.disabled);
   historyNext.classList.toggle("opacity-40", historyNext.disabled);
 
-  historyList.querySelectorAll(".history-select").forEach((select) => {
-    select.addEventListener("change", (event) => {
-      const target = event.target;
-      const itemId = target.dataset.id;
-      const newValue = target.value;
+  historyList.querySelectorAll(".history-badge").forEach((badge) => {
+    badge.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const itemId = badge.dataset.id;
       const item = history.find((entry) => entry.id === itemId);
       if (!item) return;
 
+      const nextValue = item.classification === "Produtivo" ? "Improdutivo" : "Produtivo";
       openConfirm({
         title: "Alterar classificação",
-        message: "Tem certeza que deseja alterar manualmente a classificação?",
+        message: `Confirmar alteração para "${nextValue}"?`,
         onConfirm: () => {
-          item.classification = newValue;
+          item.classification = nextValue;
           const inboxItem = inbox.find((entry) => entry.id === item.emailId);
           if (inboxItem) {
-            inboxItem.classification = newValue;
+            inboxItem.classification = nextValue;
           }
           persistState();
           renderInbox();
