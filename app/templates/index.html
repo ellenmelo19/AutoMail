@@ -408,5 +408,37 @@
       aria-live="polite"
       aria-atomic="true"
     ></div>
+
+    <div
+      id="confirm-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center px-6"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <div class="relative w-full max-w-md rounded-2xl border border-app bg-surface-strong p-6 shadow-xl">
+        <h2 id="confirm-title" class="text-lg font-semibold">Confirmar ação</h2>
+        <p id="confirm-message" class="mt-2 text-sm text-muted">
+          Tem certeza que deseja continuar?
+        </p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <button
+            id="confirm-cancel"
+            type="button"
+            class="rounded-xl border border-app px-4 py-2 text-sm font-semibold text-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            id="confirm-accept"
+            type="button"
+            class="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

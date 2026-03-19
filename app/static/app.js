@@ -19,6 +19,11 @@ const analyzeSpinner = document.getElementById("analyze-spinner");
 const toastContainer = document.getElementById("toast-container");
 const themeToggle = document.getElementById("theme-toggle");
 const themeLabel = document.getElementById("theme-label");
+const confirmModal = document.getElementById("confirm-modal");
+const confirmTitle = document.getElementById("confirm-title");
+const confirmMessage = document.getElementById("confirm-message");
+const confirmCancel = document.getElementById("confirm-cancel");
+const confirmAccept = document.getElementById("confirm-accept");
 
 const resultClassification = document.getElementById("result-classification");
 const resultMeta = document.getElementById("result-meta");
@@ -68,8 +73,11 @@ const escapeHtml = (value) =>
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-const formatTime = (date) =>
-  date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+const formatDateTime = (date) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 
 const getHistoryPageCount = () => Math.max(1, Math.ceil(history.length / historyPageSize));
 
@@ -162,6 +170,51 @@ const showToast = (message, type = "error") => {
   }, 4000);
 };
 
+const openConfirm = ({
+  title = "Confirmar ação",
+  message = "Tem certeza que deseja continuar?",
+  onConfirm,
+}) => {
+  confirmTitle.textContent = title;
+  confirmMessage.textContent = message;
+  confirmModal.classList.remove("hidden");
+  confirmModal.classList.add("flex");
+  confirmModal.dataset.open = "true";
+  confirmModal.dataset.confirm = "";
+
+  const handleConfirm = () => {
+    if (confirmModal.dataset.confirm === "true") {
+      return;
+    }
+    confirmModal.dataset.confirm = "true";
+    closeConfirm();
+    if (typeof onConfirm === "function") {
+      onConfirm();
+    }
+  };
+
+  const handleCancel = () => {
+    closeConfirm();
+  };
+
+  confirmAccept.onclick = handleConfirm;
+  confirmCancel.onclick = handleCancel;
+
+  const handleBackdrop = (event) => {
+    if (event.target === confirmModal) {
+      handleCancel();
+    }
+  };
+
+  confirmModal.addEventListener("click", handleBackdrop, { once: true });
+};
+
+const closeConfirm = () => {
+  confirmModal.classList.add("hidden");
+  confirmModal.classList.remove("flex");
+  confirmModal.dataset.open = "false";
+};
+
 const renderInbox = () => {
   inboxList.innerHTML = "";
 
@@ -202,7 +255,11 @@ const renderInbox = () => {
     deleteBtn.textContent = "×";
     deleteBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      deleteEmail(email.id);
+      openConfirm({
+        title: "Excluir email",
+        message: "Deseja remover este email da caixa de entrada?",
+        onConfirm: () => deleteEmail(email.id),
+      });
     });
 
     card.appendChild(deleteBtn);
@@ -280,22 +337,20 @@ const renderHistory = () => {
       const item = history.find((entry) => entry.id === itemId);
       if (!item) return;
 
-      const confirmed = window.confirm(
-        "Tem certeza que deseja alterar manualmente a classificação?"
-      );
-      if (!confirmed) {
-        target.value = item.classification;
-        return;
-      }
-
-      item.classification = newValue;
-      const inboxItem = inbox.find((entry) => entry.id === item.emailId);
-      if (inboxItem) {
-        inboxItem.classification = newValue;
-      }
-      persistState();
-      renderInbox();
-      renderHistory();
+      openConfirm({
+        title: "Alterar classificação",
+        message: "Tem certeza que deseja alterar manualmente a classificação?",
+        onConfirm: () => {
+          item.classification = newValue;
+          const inboxItem = inbox.find((entry) => entry.id === item.emailId);
+          if (inboxItem) {
+            inboxItem.classification = newValue;
+          }
+          persistState();
+          renderInbox();
+          renderHistory();
+        },
+      });
     });
   });
 };
@@ -342,9 +397,6 @@ const addNewEmail = () => {
 };
 
 const deleteEmail = (id) => {
-  const confirmed = window.confirm("Deseja excluir este email?");
-  if (!confirmed) return;
-
   inbox = inbox.filter((item) => item.id !== id);
 
   if (inbox.length === 0) {
@@ -457,7 +509,7 @@ form.addEventListener("submit", async (event) => {
       subject: email.subject || "Sem assunto",
       classification: data.classification,
       engine: data.engine,
-      time: formatTime(new Date()),
+      time: formatDateTime(new Date()),
     };
 
     email.classification = data.classification;
