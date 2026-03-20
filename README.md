@@ -61,14 +61,34 @@ Esse pipeline está em `app/services/nlp.py` e é usado pelo fallback local em `
 
 ## Treinamento rápido (baseline)
 
-Para demonstrar um ajuste/treinamento simples, há um dataset pequeno em `data/samples.csv`
+Para demonstrar um ajuste/treinamento simples, há um dataset em `data/samples.csv`
 e um script que treina um classificador TF‑IDF + Regressão Logística.
 
 ```bash
 python scripts/train_baseline.py
 ```
 
-O script imprime acurácia e relatório de classificação no terminal.
+O script imprime acurácia média em validação cruzada (5‑fold), relatório de classificação
+e matriz de confusão. Como o dataset é pequeno, as métricas variam bastante; a ideia
+é demonstrar o pipeline de treino e deixar claro o impacto do volume de dados.
+
+Exemplo de execução (dataset atual):
+
+```text
+Acurácia (5-fold): 0.93 ± 0.03
+              precision    recall  f1-score   support
+
+ Improdutivo       1.00      0.87      0.93        30
+   Produtivo       0.88      1.00      0.94        30
+
+    accuracy                           0.93        60
+   macro avg       0.94      0.93      0.93        60
+weighted avg       0.94      0.93      0.93        60
+
+Matriz de confusão:
+[[26  4]
+ [ 0 30]]
+```
 
 ## Deploy (Render)
 

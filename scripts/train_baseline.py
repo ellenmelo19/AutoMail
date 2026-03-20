@@ -6,8 +6,9 @@ from pathlib import Path
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
+from sklearn.pipeline import Pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "samples.csv"
@@ -35,24 +36,28 @@ def main() -> None:
     if not texts:
         raise SystemExit("Dataset vazio. Verifique data/samples.csv.")
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        texts,
-        labels,
-        test_size=0.25,
-        random_state=42,
-        stratify=labels,
+    pipeline = Pipeline(
+        steps=[
+            (
+                "tfidf",
+                TfidfVectorizer(
+                    stop_words=sorted(STOPWORDS_PT),
+                    ngram_range=(1, 2),
+                    min_df=1,
+                ),
+            ),
+            ("clf", LogisticRegression(max_iter=1000, class_weight="balanced")),
+        ]
     )
 
-    vectorizer = TfidfVectorizer(stop_words=sorted(STOPWORDS_PT))
-    x_train_vec = vectorizer.fit_transform(x_train)
-    x_test_vec = vectorizer.transform(x_test)
+    kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    scores = cross_val_score(pipeline, texts, labels, cv=kfold, scoring="accuracy")
+    print(f"Acurácia (5-fold): {scores.mean():.2f} ± {scores.std():.2f}")
 
-    model = LogisticRegression(max_iter=1000)
-    model.fit(x_train_vec, y_train)
-
-    predictions = model.predict(x_test_vec)
-    print(f"Acurácia: {accuracy_score(y_test, predictions):.2f}")
-    print(classification_report(y_test, predictions))
+    predictions = cross_val_predict(pipeline, texts, labels, cv=kfold)
+    print(classification_report(labels, predictions))
+    print("Matriz de confusão:")
+    print(confusion_matrix(labels, predictions))
 
 
 if __name__ == "__main__":

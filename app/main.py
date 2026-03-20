@@ -14,6 +14,8 @@ app = FastAPI(title="AutoMail")
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+ALLOWED_EXTENSIONS = {".txt", ".pdf"}
+
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1)
@@ -43,6 +45,16 @@ async def process(
     source = "texto"
 
     if file and file.filename:
+        filename = file.filename.lower()
+        if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "result": None,
+                    "error": "Formato inválido. Envie apenas arquivos .txt ou .pdf.",
+                },
+            )
         data = await file.read()
         if not data:
             return templates.TemplateResponse(
@@ -100,6 +112,10 @@ async def api_analyze(payload: AnalyzeRequest):
 async def api_analyze_file(file: UploadFile = File(...)):
     if not file.filename:
         return {"error": "Envie um arquivo válido (.txt ou .pdf)."}
+
+    filename = file.filename.lower()
+    if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        return {"error": "Formato inválido. Envie apenas arquivos .txt ou .pdf."}
 
     data = await file.read()
     if not data:
