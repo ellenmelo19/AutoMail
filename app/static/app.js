@@ -17,6 +17,7 @@ const fileInput = document.getElementById("email-file");
 const fileMeta = document.getElementById("file-meta");
 const fileName = document.getElementById("file-name");
 const fileClear = document.getElementById("file-clear");
+const fillExampleBtn = document.getElementById("fill-example");
 const analyzeBtn = document.getElementById("analyze-btn");
 const analyzeBtnText = document.getElementById("analyze-btn-text");
 const analyzeSpinner = document.getElementById("analyze-spinner");
@@ -60,6 +61,21 @@ const sampleEmails = [
     createdAt: Date.now() - 1000 * 60 * 60 * 12,
   },
 ];
+
+const quickExamples = [
+  {
+    from: "cliente@empresa.com",
+    subject: "Status de contestação em aberto",
+    body: "Olá, poderiam atualizar o status da minha contestação? Preciso de uma previsão de prazo.",
+  },
+  {
+    from: "relacionamento@cliente.com",
+    subject: "Obrigada pelo atendimento",
+    body: "Boa tarde! Passando para agradecer o suporte de ontem, vocês foram muito rápidos.",
+  },
+];
+
+let quickExampleIndex = 0;
 
 let inbox = [];
 let history = [];
@@ -460,6 +476,21 @@ const updateCurrentEmail = () => {
   renderInbox();
 };
 
+const fillExample = () => {
+  const email = getCurrentEmail();
+  if (!email) return;
+
+  const example = quickExamples[quickExampleIndex % quickExamples.length];
+  quickExampleIndex += 1;
+
+  fromInput.value = example.from;
+  subjectInput.value = example.subject;
+  bodyInput.value = example.body;
+  resetFileInput();
+  updateCurrentEmail();
+  showToast("Exemplo preenchido.", "success");
+};
+
 const addNewEmail = () => {
   const newEmail = {
     id: `new-${Date.now()}`,
@@ -615,6 +646,10 @@ fileInput.addEventListener("change", updateFileMeta);
 fileClear.addEventListener("click", () => {
   resetFileInput();
 });
+
+if (fillExampleBtn) {
+  fillExampleBtn.addEventListener("click", fillExample);
+}
 
 historyPrev.addEventListener("click", () => {
   if (historyPage > 1) {

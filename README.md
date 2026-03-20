@@ -21,8 +21,7 @@ Acesse: `http://127.0.0.1:8000`
 
 - Upload de `.txt` e `.pdf` ou colagem de texto.
 - Extração do conteúdo do email.
-- Classificação com Gemini (quando configurado).
-- Fallback local por palavras‑chave se o Gemini não estiver disponível.
+- Classificação com Gemini (quando configurado) e fallback local.
 - Pré-processamento NLP com remoção de stopwords e stemming para apoiar a classificação local.
 - Interface estilo inbox com histórico e edição manual da classificação.
 - Inbox com criação e exclusão de emails, histórico paginado e loading de análise.
@@ -30,6 +29,27 @@ Acesse: `http://127.0.0.1:8000`
 - Alternância entre tema claro e escuro.
 - Paginação responsiva na inbox e no histórico com timestamps completos.
 - Paginação na inbox e datas completas nos cards.
+
+## Fluxo de IA (classificação e resposta)
+
+1) Recebe texto ou arquivo.
+2) Extrai e normaliza o conteúdo.
+3) Aplica pré-processamento NLP (stopwords + stemming).
+4) Se há chave do Gemini, usa o modelo para classificar e gerar resposta.
+5) Se não há chave, aplica heurística local por palavras‑chave.
+6) Retorna categoria e resposta sugerida para a interface.
+
+## Teste rápido (UI)
+
+- Na tela principal, use o botão **Preencher exemplo** para carregar um email pronto.
+- Clique em **Analisar email** e veja a classificação e a resposta sugerida.
+
+## Exemplos rápidos (entrada e saída esperada)
+
+- **Exemplo Produtivo:** Entrada "Olá, preciso de atualização do meu chamado e previsão de prazo."  
+Saída esperada: classificação `Produtivo` + resposta de acompanhamento.
+- **Exemplo Improdutivo:** Entrada "Boa tarde! Só passando para agradecer o suporte."  
+Saída esperada: classificação `Improdutivo` + resposta cordial.
 
 ## Configurar Gemini (passo a passo)
 
@@ -50,6 +70,11 @@ GEMINI_MODEL=gemini-3-flash-preview
 3) Reinicie o servidor local (`uvicorn`) após configurar o `.env`.
 
 > Importante: nunca comite sua chave. O `.env` já está no `.gitignore`.
+
+## Sem chave do Gemini
+
+- A aplicação continua funcionando via fallback local.
+- O resultado ainda entrega classificação e resposta sugerida, mas sem IA generativa.
 
 ## Pipeline de NLP (pré-processamento)
 
@@ -90,6 +115,11 @@ Matriz de confusão:
  [ 0 30]]
 ```
 
+## Limitações conhecidas
+
+- PDFs escaneados (imagem) não têm OCR embutido e podem não extrair texto.
+- O dataset de treino é pequeno e serve apenas para demonstrar o pipeline.
+
 ## Deploy (Render)
 
 - Adicione `GEMINI_API_KEY` e opcionalmente `GEMINI_MODEL` nas variáveis de ambiente do serviço.
@@ -102,5 +132,5 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ## Roadmap curto
 
 - Refinar prompts e validação de saída do Gemini.
-- NLP para limpeza e normalização aprimorada.
-- Ajustes finais de UI e experiência.
+- OCR para PDF escaneado.
+- Exportação do histórico em CSV.
