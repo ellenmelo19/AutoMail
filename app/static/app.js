@@ -3,6 +3,7 @@ const historyList = document.getElementById("history-list");
 const historyPrev = document.getElementById("history-prev");
 const historyNext = document.getElementById("history-next");
 const historyPageLabel = document.getElementById("history-page");
+const historyClear = document.getElementById("history-clear");
 const inboxPrev = document.getElementById("inbox-prev");
 const inboxNext = document.getElementById("inbox-next");
 const inboxPageLabel = document.getElementById("inbox-page");
@@ -395,6 +396,9 @@ const renderHistory = () => {
   historyNext.disabled = historyPage >= getHistoryPageCount();
   historyPrev.classList.toggle("opacity-40", historyPrev.disabled);
   historyNext.classList.toggle("opacity-40", historyNext.disabled);
+  if (historyClear) {
+    historyClear.disabled = history.length === 0;
+  }
 
   historyList.querySelectorAll(".history-toggle").forEach((button) => {
     button.addEventListener("click", (event) => {
@@ -627,6 +631,22 @@ historyNext.addEventListener("click", () => {
     renderHistory();
   }
 });
+
+if (historyClear) {
+  historyClear.addEventListener("click", () => {
+    openConfirm({
+      title: "Limpar histórico",
+      message: "Deseja remover todas as análises registradas?",
+      onConfirm: () => {
+        history = [];
+        historyPage = 1;
+        persistState();
+        renderHistory();
+        showToast("Histórico limpo.", "success");
+      },
+    });
+  });
+}
 
 inboxPrev.addEventListener("click", () => {
   if (inboxPage > 1) {
