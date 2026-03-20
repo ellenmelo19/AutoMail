@@ -23,6 +23,7 @@ Acesse: `http://127.0.0.1:8000`
 - Extração do conteúdo do email.
 - Classificação com Gemini (quando configurado).
 - Fallback local por palavras‑chave se o Gemini não estiver disponível.
+- Pré-processamento NLP com remoção de stopwords e stemming para apoiar a classificação local.
 - Interface estilo inbox com histórico e edição manual da classificação.
 - Inbox com criação e exclusão de emails, histórico paginado e loading de análise.
 - Estado salvo em `localStorage` para manter inbox e histórico após recarregar.
@@ -49,6 +50,25 @@ GEMINI_MODEL=gemini-3-flash-preview
 3) Reinicie o servidor local (`uvicorn`) após configurar o `.env`.
 
 > Importante: nunca comite sua chave. O `.env` já está no `.gitignore`.
+
+## Pipeline de NLP (pré-processamento)
+
+- Tokenização simples (acentos preservados).
+- Remoção de stopwords em PT-BR.
+- Stemming (Snowball PT) antes da classificação local.
+
+Esse pipeline está em `app/services/nlp.py` e é usado pelo fallback local em `app/services/processing.py`.
+
+## Treinamento rápido (baseline)
+
+Para demonstrar um ajuste/treinamento simples, há um dataset pequeno em `data/samples.csv`
+e um script que treina um classificador TF‑IDF + Regressão Logística.
+
+```bash
+python scripts/train_baseline.py
+```
+
+O script imprime acurácia e relatório de classificação no terminal.
 
 ## Deploy (Render)
 

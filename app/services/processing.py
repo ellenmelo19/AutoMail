@@ -8,6 +8,7 @@ from typing import Iterable
 from pypdf import PdfReader
 
 from app.services.gemini_client import classify_with_gemini
+from app.services.nlp import preprocess_text, stem_words, tokenize
 
 
 PRODUCTIVE_KEYWORDS = {
@@ -64,6 +65,18 @@ GREETING_KEYWORDS = {
     "boa noite",
 }
 
+def _stem_keyword_set(keywords: Iterable[str]) -> set[str]:
+    tokens: list[str] = []
+    for keyword in keywords:
+        parts = tokenize(keyword)
+        if len(parts) == 1:
+            tokens.append(parts[0])
+    return set(stem_words(tokens))
+
+
+PRODUCTIVE_STEMS = _stem_keyword_set(PRODUCTIVE_KEYWORDS)
+IMPRODUCTIVE_STEMS = _stem_keyword_set(IMPRODUCTIVE_KEYWORDS)
+
 
 @dataclass
 class EmailAnalysis:
@@ -104,10 +117,19 @@ def count_matches(text: str, keywords: Iterable[str]) -> int:
     return sum(1 for keyword in keywords if keyword in text)
 
 
+def count_token_matches(tokens: Iterable[str], stems: set[str]) -> int:
+    return sum(1 for token in tokens if token in stems)
+
+
 def classify_email(text: str) -> str:
     lowered = text.lower()
-    productive_score = count_matches(lowered, PRODUCTIVE_KEYWORDS)
-    improductive_score = count_matches(lowered, IMPRODUCTIVE_KEYWORDS)
+    tokens = preprocess_text(lowered)
+    productive_score = count_matches(lowered, PRODUCTIVE_KEYWORDS) + count_token_matches(
+        tokens, PRODUCTIVE_STEMS
+    )
+    improductive_score = count_matches(lowered, IMPRODUCTIVE_KEYWORDS) + count_token_matches(
+        tokens, IMPRODUCTIVE_STEMS
+    )
 
     if productive_score == 0 and improductive_score == 0:
         return "Produtivo"
