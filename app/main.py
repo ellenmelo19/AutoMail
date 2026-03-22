@@ -71,8 +71,8 @@ async def process(
     if not email_text:
         if file and file.filename and file.filename.lower().endswith(".pdf"):
             error_message = (
-                "Não foi possível extrair texto do PDF. "
-                "Se for um PDF escaneado (imagem), cole o texto manualmente."
+                "Não conseguimos extrair texto do PDF. "
+                "Se ele for escaneado (imagem), copie o texto e cole no campo."
             )
         else:
             error_message = "Informe um texto ou envie um arquivo válido."
@@ -125,8 +125,8 @@ async def api_analyze_file(file: UploadFile = File(...)):
     if not extracted:
         return {
             "error": (
-                "Não foi possível extrair texto do PDF. "
-                "Se for um PDF escaneado (imagem), cole o texto manualmente."
+                "Não conseguimos extrair texto do PDF. "
+                "Se ele for escaneado (imagem), copie o texto e cole no campo."
             )
         }
 
