@@ -1,11 +1,13 @@
-﻿from fastapi import FastAPI, File, Form, Request, UploadFile
+﻿import os
+
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from app.services.processing import analyze_email, extract_text_from_upload
+from app.services.processing import analyze_email, extract_text_from_upload, ocr_is_available
 
 load_dotenv()
 
@@ -15,6 +17,17 @@ templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 ALLOWED_EXTENSIONS = {".txt", ".pdf"}
+if os.getenv("DEBUG_OCR") == "1":
+    @app.get("/debug/ocr")
+    def debug_ocr():
+        return {
+            "ocr_available": ocr_is_available(),
+            "tesseract_cmd": os.getenv("TESSERACT_CMD"),
+            "tessdata_prefix": os.getenv("TESSDATA_PREFIX"),
+            "ocr_lang": os.getenv("OCR_LANG", "por"),
+            "ocr_config": os.getenv("OCR_CONFIG", "--psm 6"),
+        }
+
 
 
 class AnalyzeRequest(BaseModel):
@@ -70,10 +83,16 @@ async def process(
 
     if not email_text:
         if file and file.filename and file.filename.lower().endswith(".pdf"):
-            error_message = (
-                "Não conseguimos extrair texto do PDF. "
-                "Se ele for escaneado (imagem), copie o texto e cole no campo."
-            )
+            if ocr_is_available():
+                error_message = (
+                    "Não conseguimos extrair texto do PDF mesmo com OCR. "
+                    "Se possível, cole o texto manualmente."
+                )
+            else:
+                error_message = (
+                    "PDF parece ser imagem. OCR não está disponível no ambiente. "
+                    "Habilite OCR (ver README) ou cole o texto manualmente."
+                )
         else:
             error_message = "Informe um texto ou envie um arquivo válido."
         return templates.TemplateResponse(
@@ -123,10 +142,17 @@ async def api_analyze_file(file: UploadFile = File(...)):
 
     extracted = extract_text_from_upload(file.filename, data).strip()
     if not extracted:
+        if ocr_is_available():
+            return {
+                "error": (
+                    "Não conseguimos extrair texto do PDF mesmo com OCR. "
+                    "Se possível, cole o texto manualmente."
+                )
+            }
         return {
             "error": (
-                "Não conseguimos extrair texto do PDF. "
-                "Se ele for escaneado (imagem), copie o texto e cole no campo."
+                "PDF parece ser imagem. OCR não está disponível no ambiente. "
+                "Habilite OCR (ver README) ou cole o texto manualmente."
             )
         }
 

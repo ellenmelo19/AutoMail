@@ -2,6 +2,19 @@
 
 Aplicação web para classificar emails e sugerir respostas automáticas.
 
+## Links rápidos
+
+- Deploy: https://automail-81sl.onrender.com/
+- Vídeo: 
+
+## Documentação detalhada
+
+- Arquitetura: `docs/ARCHITECTURE.md`
+- API: `docs/API.md`
+- Mapa de arquivos: `docs/FILES.md`
+- Evolução do projeto: `docs/CHANGELOG.md`
+- Template Notion: `docs/NOTION_TEMPLATE.md`
+
 ## Requisitos
 
 - Python 3.11+
@@ -75,6 +88,19 @@ GEMINI_MODEL=gemini-3-flash-preview
 
 - A aplicação continua funcionando via fallback local.
 - O resultado ainda entrega classificação e resposta sugerida, mas sem IA generativa.
+
+## OCR para PDFs escaneados
+
+Se o PDF for imagem (ex.: “Print to PDF”), a extração de texto precisa de OCR.
+A aplicação tenta OCR automaticamente, mas requer o Tesseract instalado no sistema.
+
+Configuração sugerida:
+
+- Windows: instale o Tesseract e, se necessário, defina `TESSERACT_CMD` no `.env` com o caminho do executável.
+- Windows: defina também `TESSDATA_PREFIX` apontando para a pasta `tessdata` (ex.: `C:\Program Files\Tesseract-OCR\tessdata`).
+- Linux/macOS: instale o pacote `tesseract-ocr` via gerenciador de pacotes.
+- Opcional: definir `OCR_LANG=por` (padrão) para português.
+- Opcional: definir `OCR_CONFIG=--psm 6` para melhorar leitura de blocos de texto.
 
 ## Pipeline de NLP (pré-processamento)
 
