@@ -148,12 +148,23 @@ Matriz de confusão:
 
 ## Deploy (Render)
 
-- Adicione `GEMINI_API_KEY` e opcionalmente `GEMINI_MODEL` nas variáveis de ambiente do serviço.
-- Configure o Start Command como:
+Para OCR funcionar em produção, o deploy precisa de pacotes do sistema (Tesseract).
+O caminho mais simples é usar Docker.
+
+Passos resumidos:
+
+1) Suba o repo no GitHub.
+2) No Render, crie um **Web Service** com runtime **Docker**.
+3) Configure variáveis de ambiente:
 
 ```
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-3-flash-preview
+OCR_LANG=por+eng
 ```
+
+4) O serviço usa o `Dockerfile` da raiz e inicia o Uvicorn automaticamente.
+5) (Opcional) Health check: `/health`.
 
 ## Roadmap curto
 
