@@ -1,4 +1,5 @@
 ﻿import os
+from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
@@ -9,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.services.processing import analyze_email, extract_text_from_upload, ocr_is_available
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(title="AutoMail")
 
@@ -165,3 +166,4 @@ async def api_analyze_file(file: UploadFile = File(...)):
         "source": result.source,
         "cleaned_text": result.cleaned_text,
     }
+
