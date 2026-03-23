@@ -5,7 +5,7 @@ Aplicação web para classificar emails e sugerir respostas automáticas.
 ## Links rápidos
 
 - Deploy: https://automail-1-175s.onrender.com/
-- Vídeo: 
+- Vídeo: https://www.loom.com/share/7e415db0fc354dd48d9d5217ac92ae51
 
 ## Documentação detalhada
 
