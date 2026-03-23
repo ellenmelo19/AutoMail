@@ -6,6 +6,7 @@ Aplicação web para classificar emails e sugerir respostas automáticas.
 
 - Deploy: https://automail-1-175s.onrender.com/
 - Vídeo: https://www.loom.com/share/7e415db0fc354dd48d9d5217ac92ae51
+- Diário de Bordo do projeto: https://www.notion.so/3279b75914fa80fbbad8e2ff0d1e480f?v=3279b75914fa80428211000ceab560a8&source=copy_link
 
 ## Documentação detalhada
 
@@ -145,29 +146,3 @@ Matriz de confusão:
 
 - PDFs escaneados (imagem) não têm OCR embutido e podem não extrair texto.
 - O dataset de treino é pequeno e serve apenas para demonstrar o pipeline.
-
-## Deploy (Render)
-
-Para OCR funcionar em produção, o deploy precisa de pacotes do sistema (Tesseract).
-O caminho mais simples é usar Docker.
-
-Passos resumidos:
-
-1) Suba o repo no GitHub.
-2) No Render, crie um **Web Service** com runtime **Docker**.
-3) Configure variáveis de ambiente:
-
-```
-GEMINI_API_KEY=...
-GEMINI_MODEL=gemini-3-flash-preview
-OCR_LANG=por+eng
-```
-
-4) O serviço usa o `Dockerfile` da raiz e inicia o Uvicorn automaticamente.
-5) (Opcional) Health check: `/health`.
-
-## Roadmap curto
-
-- Refinar prompts e validação de saída do Gemini.
-- OCR para PDF escaneado.
-- Exportação do histórico em CSV.
